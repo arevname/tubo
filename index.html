@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tubo — Shopee, TikTok & Lazada Fee Calculator PH (2026) | Alamin ang totoong kita mo</title>
+<meta name="description" content="Free 2026 fee calculator for Filipino Shopee, TikTok Shop & Lazada sellers. See your true profit per order, total platform fees, and how much BIR withholding tax you can recover.">
+<style>
+  :root {
+    color-scheme: light;
+    /* chrome & ink (dataviz reference tokens) */
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --good-text:      #006300;
+    --critical:       #d03b3b;
+    --warning-bg:     #fff7e6;
+    /* categorical series (validated, fixed order) */
+    --s1: #2a78d6;  /* commission */
+    --s2: #008300;  /* transaction */
+    --s3: #e87ba4;  /* shipping program */
+    --s4: #eda100;  /* order processing */
+    --s5: #1baf7a;  /* program / voucher */
+    /* brand */
+    --brand:      #0a7a2f;
+    --brand-dark: #075c23;
+    --brand-wash: #e8f5ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted:          #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --good-text:      #0ca30c;
+      --critical:       #e66767;
+      --warning-bg:     #2a2413;
+      --s1: #3987e5; --s2: #008300; --s3: #d55181; --s4: #c98500; --s5: #199e70;
+      --brand:      #1db954;
+      --brand-dark: #17a047;
+      --brand-wash: #12261a;
+    }
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--text-primary);
+    line-height: 1.45; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 20px 16px 64px; }
+
+  /* header */
+  header { padding: 18px 0 6px; }
+  .logo { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--brand); }
+  .logo span { color: var(--text-primary); }
+  .tag { color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
+
+  h2 { font-size: 15px; font-weight: 700; margin: 26px 0 10px; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px;
+  }
+
+  /* inputs */
+  .platforms { display:flex; gap:8px; margin: 14px 0 4px; }
+  .platforms button {
+    flex:1; padding: 10px 4px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--surface-1); color: var(--text-primary);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .platforms button.active { border-color: var(--brand); background: var(--brand-wash); color: var(--brand-dark); }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  label { display:block; font-size: 12px; font-weight:600; color: var(--text-secondary); margin: 10px 0 4px; }
+  input[type=number] {
+    width:100%; padding: 10px 12px; font-size: 16px; border-radius: 10px;
+    border: 1.5px solid var(--baseline); background: var(--surface-1); color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  input[type=number]:focus { outline: 2px solid var(--brand); border-color: var(--brand); }
+  details { margin-top: 12px; }
+  summary { font-size: 13px; font-weight: 600; color: var(--brand-dark); cursor: pointer; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* stat tiles */
+  .tiles { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .tile { background: var(--surface-1); border:1px solid var(--border); border-radius: 14px; padding: 14px; }
+  .tile .k { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .tile .v { font-size: 24px; font-weight: 800; margin-top: 2px; letter-spacing: -0.5px; }
+  .tile .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .tile.hero { grid-column: 1 / -1; border: 1.5px solid var(--brand); }
+  .tile.hero .v { font-size: 34px; }
+  .pos { color: var(--good-text); } .neg { color: var(--critical); }
+
+  /* stacked bar */
+  .bar { display:flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; background: var(--surface-1); margin-top: 10px; }
+  .bar .seg { min-width: 3px; border-radius: 4px; position: relative; }
+  .bar .seg:hover { filter: brightness(1.08); }
+  .legend { display:flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 10px; }
+  .legend .li { display:flex; align-items:center; gap:6px; font-size: 12px; color: var(--text-secondary); }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* fee table (relief rule: table view always visible) */
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11.5px; padding: 6px 4px; border-bottom: 1px solid var(--grid); }
+  td { padding: 7px 4px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  td:last-child, th:last-child { text-align: right; }
+  tr.total td { font-weight: 700; border-bottom: none; }
+
+  /* withholding */
+  .wh { margin-top: 16px; border-left: 4px solid var(--brand); }
+  .wh .big { font-size: 22px; font-weight: 800; color: var(--brand-dark); }
+  .badge { display:inline-block; font-size: 11px; font-weight: 700; background: var(--brand-wash); color: var(--brand-dark); border-radius: 6px; padding: 2px 8px; margin-bottom: 6px; }
+
+  /* email capture */
+  .cta { margin-top: 22px; background: var(--brand-wash); border: 1.5px solid var(--brand); border-radius: 14px; padding: 18px 16px; }
+  .cta h3 { font-size: 17px; margin-bottom: 4px; }
+  .cta p { font-size: 13.5px; color: var(--text-secondary); }
+  .cta form { display:flex; gap:8px; margin-top: 12px; }
+  .cta input[type=email] {
+    flex:1; padding: 11px 12px; font-size: 15px; border-radius: 10px;
+    border: 1.5px solid var(--baseline); background: var(--surface-1); color: var(--text-primary);
+  }
+  .cta button {
+    padding: 11px 16px; border-radius: 10px; border: none; background: var(--brand);
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap;
+  }
+  .cta button:hover { background: var(--brand-dark); }
+  .cta .ok { color: var(--good-text); font-weight: 600; font-size: 14px; margin-top: 10px; display:none; }
+
+  footer { margin-top: 28px; font-size: 11.5px; color: var(--muted); }
+  footer a { color: var(--muted); }
+
+  /* tooltip */
+  #tip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--text-primary); color: var(--page);
+    font-size: 12px; padding: 6px 9px; border-radius: 8px; font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Tubo<span>.</span></div>
+    <div class="tag">Alamin ang <b>totoong kita</b> mo per order — fees, deductions, at withholding tax. Free, 2026 rates.</div>
+  </header>
+
+  <div class="platforms" id="platforms">
+    <button data-p="shopee" class="active">Shopee</button>
+    <button data-p="tiktok">TikTok Shop</button>
+    <button data-p="lazada">Lazada</button>
+  </div>
+
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <label for="price">Selling price (₱)</label>
+        <input type="number" id="price" value="500" min="0" inputmode="decimal">
+      </div>
+      <div>
+        <label for="cost">Product cost (₱)</label>
+        <input type="number" id="cost" value="250" min="0" inputmode="decimal">
+      </div>
+      <div>
+        <label for="pack">Packaging + misc (₱)</label>
+        <input type="number" id="pack" value="10" min="0" inputmode="decimal">
+      </div>
+      <div>
+        <label for="orders">Orders per month</label>
+        <input type="number" id="orders" value="300" min="0" inputmode="numeric">
+      </div>
+    </div>
+
+    <details id="adv">
+      <summary>Adjust fee rates (defaults: July 2026 public rates — verify sa Seller Centre mo)</summary>
+      <div class="grid2">
+        <div><label for="rCom">Commission %</label><input type="number" id="rCom" step="0.01"></div>
+        <div><label for="rTxn">Transaction %</label><input type="number" id="rTxn" step="0.01"></div>
+        <div><label for="rShip">Shipping program %</label><input type="number" id="rShip" step="0.01"></div>
+        <div><label for="rShipCap">Shipping fee cap (₱)</label><input type="number" id="rShipCap" step="1"></div>
+        <div><label for="rOpf">Order processing (₱)</label><input type="number" id="rOpf" step="1"></div>
+        <div><label for="rProg">Program / voucher %</label><input type="number" id="rProg" step="0.01"></div>
+      </div>
+      <div class="note" id="presetNote"></div>
+    </details>
+  </div>
+
+  <div class="tiles">
+    <div class="tile hero">
+      <div class="k">TRUE PROFIT PER ORDER</div>
+      <div class="v" id="profit">—</div>
+      <div class="s" id="margin">—</div>
+    </div>
+    <div class="tile">
+      <div class="k">Net payout</div>
+      <div class="v" id="payout">—</div>
+      <div class="s">after platform fees</div>
+    </div>
+    <div class="tile">
+      <div class="k">Total fees</div>
+      <div class="v" id="fees">—</div>
+      <div class="s" id="feesPct">—</div>
+    </div>
+    <div class="tile">
+      <div class="k">Profit / month</div>
+      <div class="v" id="mProfit">—</div>
+      <div class="s" id="mOrders">—</div>
+    </div>
+    <div class="tile">
+      <div class="k">Fees paid / month</div>
+      <div class="v" id="mFees">—</div>
+      <div class="s">sa platform</div>
+    </div>
+  </div>
+
+  <h2>Saan napupunta ang bawat piso ng fees?</h2>
+  <div class="card">
+    <div class="bar" id="bar" role="img" aria-label="Fee breakdown per order"></div>
+    <div class="legend" id="legend"></div>
+    <table aria-label="Fee breakdown table">
+      <thead><tr><th>Fee</th><th>Rate</th><th>₱ / order</th></tr></thead>
+      <tbody id="feeRows"></tbody>
+    </table>
+  </div>
+
+  <div class="card wh">
+    <span class="badge">MOST SELLERS NEVER CLAIM THIS</span>
+    <div id="whBody"></div>
+    <div class="note">Under RR 16-2023, platforms withhold 1% of half your gross remittance (~0.5% effective) once annual remittances exceed ₱500,000. It's <b>creditable</b> — you can offset it against your income tax with Form 2307. Hindi ito gastos; pera mo ito.</div>
+  </div>
+
+  <div class="cta">
+    <h3>Gusto mo bang mabawi ang withheld tax mo?</h3>
+    <p>We're building <b>Tubo</b> — upload your Shopee/TikTok/Lazada payout reports, and we reconcile every fee, compute your true profit per SKU, and track every peso withheld so you can claim it back sa BIR filing. Join the early list — libre for early sellers.</p>
+    <form id="capture" action="https://formsubmit.co/ajax/emaaanveraaa@gmail.com" method="POST">
+      <input type="hidden" name="_subject" value="Tubo waitlist signup">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+      <input type="email" name="email" placeholder="iyong@email.com" required>
+      <button type="submit">Sali ako</button>
+    </form>
+    <div class="ok" id="capOk">Salamat! Nasa listahan ka na. 🎉</div>
+  </div>
+
+  <footer>
+    Rates are public defaults as of July 2026 (VAT-inclusive where the platform states so) and change often — always verify in your Seller Centre. Estimates only; hindi ito tax o legal advice. © 2026 Tubo.
+  </footer>
+</div>
+<div id="tip"></div>
+
+<script>
+  // ---- presets (July 2026 public rates; all editable in UI) ----
+  const PRESETS = {
+    shopee: { com: 9.5,  txn: 2.24, ship: 5.6, shipCap: 100, opf: 5, prog: 1.25,
+      note: "Shopee Marketplace: commission 8.5–10.5% by category (9.5% default), transaction 2.24%, Free Shipping program 5.6% (cap ₱100), ₱5 order processing, Seller Growth Support ~1–1.5%." },
+    tiktok: { com: 6.5,  txn: 2.24, ship: 5.25, shipCap: 100, opf: 5, prog: 0,
+      note: "TikTok Shop: commission ~5–8% by category (6.5% default), transaction ~1.6–2.24%, shipping program ~5–5.5% (cap ₱100), ₱5 order processing. Affiliate/creator commission not included — add under Program % if you use affiliates." },
+    lazada: { com: 3,    txn: 2.24, ship: 0, shipCap: 0, opf: 5, prog: 0,
+      note: "Lazada Marketplace: commission ~1–5% by category (3% default), payment fee ~2.24%, ₱5 order processing. Shipping handled via FBL or own logistics — add costs under Packaging+misc if seller-shouldered." }
+  };
+  const SEGMENTS = [
+    { key:"com",  name:"Commission",       css:"--s1" },
+    { key:"txn",  name:"Transaction",      css:"--s2" },
+    { key:"ship", name:"Shipping program", css:"--s3" },
+    { key:"opf",  name:"Order processing", css:"--s4" },
+    { key:"prog", name:"Program / voucher",css:"--s5" },
+  ];
+  let platform = "shopee";
+  const $ = id => document.getElementById(id);
+  const peso = n => "₱" + n.toLocaleString("en-PH", {minimumFractionDigits: n < 100 ? 2 : 0, maximumFractionDigits: n < 100 ? 2 : 0});
+
+  function loadPreset(p) {
+    const r = PRESETS[p];
+    $("rCom").value = r.com; $("rTxn").value = r.txn; $("rShip").value = r.ship;
+    $("rShipCap").value = r.shipCap; $("rOpf").value = r.opf; $("rProg").value = r.prog;
+    $("presetNote").textContent = r.note;
+  }
+
+  function calc() {
+    const price = +$("price").value || 0;
+    const cost  = +$("cost").value || 0;
+    const pack  = +$("pack").value || 0;
+    const orders= +$("orders").value || 0;
+
+    const com  = price * (+$("rCom").value || 0) / 100;
+    const txn  = price * (+$("rTxn").value || 0) / 100;
+    const cap  = +$("rShipCap").value || 0;
+    let ship   = price * (+$("rShip").value || 0) / 100;
+    if (cap > 0) ship = Math.min(ship, cap);
+    const opf  = +$("rOpf").value || 0;
+    const prog = price * (+$("rProg").value || 0) / 100;
+
+    const parts = { com, txn, ship, opf, prog };
+    const fees  = com + txn + ship + opf + prog;
+    const payout = price - fees;
+    const profit = payout - cost - pack;
+    const margin = price > 0 ? profit / price * 100 : 0;
+
+    // tiles
+    $("profit").textContent = peso(profit);
+    $("profit").className = "v " + (profit >= 0 ? "pos" : "neg");
+    $("margin").textContent = margin.toFixed(1) + "% ng selling price" + (profit < 0 ? " — lugi ka rito" : "");
+    $("payout").textContent = peso(payout);
+    $("fees").textContent = peso(fees);
+    $("feesPct").textContent = price > 0 ? (fees/price*100).toFixed(1) + "% of price" : "—";
+    $("mProfit").textContent = peso(profit * orders);
+    $("mProfit").className = "v " + (profit >= 0 ? "pos" : "neg");
+    $("mOrders").textContent = "at " + orders.toLocaleString() + " orders/mo";
+    $("mFees").textContent = peso(fees * orders);
+
+    // stacked bar + legend + table (labels/table = relief for low-contrast slots)
+    const bar = $("bar"), leg = $("legend"), rows = $("feeRows");
+    bar.innerHTML = ""; leg.innerHTML = ""; rows.innerHTML = "";
+    SEGMENTS.forEach(s => {
+      const v = parts[s.key];
+      if (fees > 0 && v > 0) {
+        const seg = document.createElement("div");
+        seg.className = "seg";
+        seg.style.width = (v / fees * 100) + "%";
+        seg.style.background = "var(" + s.css + ")";
+        seg.dataset.label = s.name + ": " + peso(v) + " (" + (v/fees*100).toFixed(0) + "% of fees)";
+        bar.appendChild(seg);
+      }
+      const li = document.createElement("div");
+      li.className = "li";
+      li.innerHTML = '<span class="sw" style="background:var(' + s.css + ')"></span>' + s.name;
+      leg.appendChild(li);
+      const rateTxt = s.key === "opf" ? "₱" + (+$("rOpf").value || 0) + " flat"
+        : ((s.key==="com"? $("rCom") : s.key==="txn"? $("rTxn") : s.key==="ship"? $("rShip") : $("rProg")).value || 0) + "%" + (s.key==="ship" && cap>0 ? " (cap ₱" + cap + ")" : "");
+      rows.insertAdjacentHTML("beforeend",
+        "<tr><td>" + s.name + "</td><td>" + rateTxt + "</td><td>" + peso(v) + "</td></tr>");
+    });
+    rows.insertAdjacentHTML("beforeend",
+      '<tr class="total"><td>Total fees</td><td>' + (price>0 ? (fees/price*100).toFixed(1)+"%" : "—") + "</td><td>" + peso(fees) + "</td></tr>");
+
+    // withholding (RR 16-2023): 1% of half of gross remittances ≈ 0.5% effective, ₱500k de-minimis
+    const annualRemit = payout * orders * 12;
+    const wh = $("whBody");
+    if (annualRemit <= 0) {
+      wh.innerHTML = "<div class='note'>Enter price at orders para makita ang withholding estimate.</div>";
+    } else if (annualRemit <= 500000) {
+      wh.innerHTML = "Est. annual remittance: <b>" + peso(annualRemit) + "</b> — nasa ilalim ng ₱500k de-minimis. <b>Walang withholding</b> kung nag-submit ka ng sworn declaration sa platform.";
+    } else {
+      const withheld = annualRemit * 0.005;
+      wh.innerHTML = "<div class='big'>" + peso(withheld) + " / year</div>ang tinatanggal sa payouts mo bilang withholding tax (est., ~0.5% ng " + peso(annualRemit) + " annual remittance).";
+    }
+  }
+
+  // events
+  document.querySelectorAll("#platforms button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#platforms button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); platform = b.dataset.p; loadPreset(platform); calc();
+  }));
+  document.querySelectorAll("input[type=number]").forEach(i => i.addEventListener("input", calc));
+
+  // tooltip (hover layer for the stacked bar)
+  const tip = $("tip");
+  $("bar").addEventListener("mousemove", e => {
+    const t = e.target.closest(".seg");
+    if (!t) { tip.style.display = "none"; return; }
+    tip.textContent = t.dataset.label;
+    tip.style.display = "block";
+    tip.style.left = Math.min(e.clientX + 12, window.innerWidth - 220) + "px";
+    tip.style.top = (e.clientY - 34) + "px";
+  });
+  $("bar").addEventListener("mouseleave", () => tip.style.display = "none");
+  $("bar").addEventListener("click", e => {   // mobile tap
+    const t = e.target.closest(".seg");
+    if (t) { tip.textContent = t.dataset.label; tip.style.display = "block";
+      tip.style.left = "16px"; tip.style.top = (e.clientY - 40) + "px";
+      setTimeout(() => tip.style.display = "none", 1800); }
+  });
+
+  // email capture (FormSubmit AJAX)
+  $("capture").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target;
+    try {
+      const res = await fetch(f.action, { method: "POST", body: new FormData(f), headers: { Accept: "application/json" } });
+      if (res.ok) { f.style.display = "none"; $("capOk").style.display = "block"; }
+      else alert("May error — subukan ulit.");
+    } catch { alert("May error — subukan ulit."); }
+  });
+
+  loadPreset(platform); calc();
+</script>
+</body>
+</html>
